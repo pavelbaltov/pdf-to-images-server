@@ -25,16 +25,15 @@ def convert_pdf_to_png():
 
         file_bytes = file.read()
 
-        images = convert_from_bytes(file_bytes, dpi=200, fmt='png')
+        images = convert_from_bytes(file_bytes, dpi=50, fmt='png')
 
         zip_buffer = BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
-
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
             for i, image in enumerate(images):
-                img_io = BytesIO()
-                image.save(img_io, 'PNG')
-                img_io.seek(0)
-                zip_file.writestr(f'page_{i + 1}.png', img_io.getvalue())
+                with BytesIO() as img_io:
+                    image.save(img_io, 'PNG')
+                    img_io.seek(0)
+                    zip_file.writestr(f'page_{i + 1}.png', img_io.getvalue())
 
         zip_buffer.seek(0)
         return send_file(zip_buffer, mimetype='application/zip', as_attachment=True,
@@ -62,21 +61,19 @@ def upload_file():
 def uploaded_file(filename):
 
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-   
+
     with open(file_path, 'rb') as f:
         file_bytes = f.read()
 
-    images = convert_from_bytes(file_bytes, dpi=200, fmt='png')
+    images = convert_from_bytes(file_bytes, dpi=50, fmt='png')
 
     zip_buffer = BytesIO()
-    with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
         for i, image in enumerate(images):
-            img_io = BytesIO()
-            image.save(img_io, 'PNG')
-            img_io.seek(0)
-            zip_file.writestr(f'page_{i + 1}.png', img_io.getvalue())
+            with BytesIO() as img_io:
+                image.save(img_io, 'PNG')
+                img_io.seek(0)
+                zip_file.writestr(f'page_{i + 1}.png', img_io.getvalue())
 
     zip_buffer.seek(0)
-    return send_file(zip_buffer, mimetype='application/zip', as_attachment=True,
-                     download_name='images.zip')
-
+    return send_file(zip_buffer, mimetype='application/zip', as_attachment=True, download_name='images.zip')
